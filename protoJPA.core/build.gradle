@@ -1,0 +1,16 @@
+apply plugin : 'java'
+
+group "com.lognet"
+version "1.0.0"
+
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile(
+            'org.hibernate:hibernate-tools:4.0.0-CR1',
+    )
+
+
+}

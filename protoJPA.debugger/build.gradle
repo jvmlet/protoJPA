@@ -1,0 +1,18 @@
+apply plugin : 'java'
+group "com.lognet"
+version "1.0.0"
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile(
+            'org.hsqldb:hsqldb:2.3.1',
+            'org.hsqldb:sqltool:2.3.1',
+            'junit:junit:4.11',
+            project(":protoJPA.core"),
+    )
+    runtime(
+            'org.slf4j:slf4j-simple:1.7.2'
+    )
+}
+

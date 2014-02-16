@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -40,10 +42,11 @@ public class ProtoFilesConsolidator extends ArtifactCollector {
         try {
             outputProtoFile.delete();
             FileChannel dest = new FileOutputStream(outputProtoFile, true).getChannel();
-            final ByteBuffer pckgBuffer = ByteBuffer.allocate((getPackageName()).length()).put(getPackageName().getBytes());
 
+            final ByteBuffer pckgBuffer = ByteBuffer.allocate((getPackageName()).length()).put(getPackageName().getBytes());
             pckgBuffer.rewind();
             dest.write(pckgBuffer);
+
             final File[] protoFiles = getFiles("proto");
             for (File protoFile : protoFiles) {
                 FileChannel src = new FileInputStream(protoFile).getChannel();
@@ -51,9 +54,17 @@ public class ProtoFilesConsolidator extends ArtifactCollector {
                 src.close();
                 protoFile.delete();
             }
+            final URL extraMessages = ClassLoader.getSystemClassLoader().getResource("extraProtoMessages.txt");
+            if(null!=extraMessages){
+                FileChannel ch = new FileInputStream(new File(extraMessages.toURI())).getChannel();
+                dest.transferFrom(ch, dest.size(), ch.size());
+                ch.close();
+            }
             dest.close();
         } catch (IOException e) {
             throw new ExporterException("Failed to consolidate files", e);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
         }
         runProtoc();
 

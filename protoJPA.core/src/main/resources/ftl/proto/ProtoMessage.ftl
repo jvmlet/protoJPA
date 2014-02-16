@@ -9,8 +9,8 @@ message ${pojo.getDeclarationName()} {
 
 <#assign additionalFields =pojo.getMetaAsString("proto-code")/>
 <#if (additionalFields.trim().length()>0)>
-<#foreach addfield in additionalFields.split(",") >
-    ${addfield}= ${addfield_index+1+c};
+<#foreach addfield in additionalFields.split(";") >
+    ${addfield.replace("%d",(addfield_index+1+c)?string.number)};
 </#foreach>
 </#if>
 }

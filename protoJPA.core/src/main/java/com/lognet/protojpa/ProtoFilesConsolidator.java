@@ -16,6 +16,9 @@ import java.nio.channels.FileChannel;
  * Created by alexf on 2/10/14.
  */
 public class ProtoFilesConsolidator extends ArtifactCollector {
+
+    public static final String EXTRA_PROTO_MESSAGES_TXT = "extraProtoMessages.txt";
+
     protected Logger log = LoggerFactory.getLogger(this.getClass());
     private String outputJavaDir;
     private File outputProtoFile;
@@ -39,9 +42,10 @@ public class ProtoFilesConsolidator extends ArtifactCollector {
 
     @Override
     public void formatFiles() {
+        FileChannel dest = null;
         try {
             outputProtoFile.delete();
-            FileChannel dest = new FileOutputStream(outputProtoFile, true).getChannel();
+            dest = new FileOutputStream(outputProtoFile, true).getChannel();
 
             final ByteBuffer pckgBuffer = ByteBuffer.allocate((getPackageName()).length()).put(getPackageName().getBytes());
             pckgBuffer.rewind();
@@ -54,17 +58,26 @@ public class ProtoFilesConsolidator extends ArtifactCollector {
                 src.close();
                 protoFile.delete();
             }
-            final URL extraMessages = ClassLoader.getSystemClassLoader().getResource("extraProtoMessages.txt");
+            final URL extraMessages = ClassLoader.getSystemClassLoader().getResource(EXTRA_PROTO_MESSAGES_TXT);
             if(null!=extraMessages){
                 FileChannel ch = new FileInputStream(new File(extraMessages.toURI())).getChannel();
                 dest.transferFrom(ch, dest.size(), ch.size());
                 ch.close();
             }
-            dest.close();
+
         } catch (IOException e) {
             throw new ExporterException("Failed to consolidate files", e);
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            throw new ExporterException("Failed to consolidate files", e);
+        }
+        finally {
+            if(null!=dest){
+                try {
+                    dest.close();
+                } catch (IOException e) {
+
+                }
+            }
         }
         runProtoc();
 

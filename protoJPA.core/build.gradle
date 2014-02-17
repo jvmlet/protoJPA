@@ -1,7 +1,6 @@
 apply plugin : 'java'
 
-group "com.lognet"
-version "1.0.0"
+
 
 
 repositories {

@@ -3,8 +3,18 @@ ${pojo.getPackageDeclaration()}
 // Generated ${date} by Lognet Hibernate Tools extension ${version}
 
 <#assign classbody>
-<#include "../../pojo/PojoTypeDeclaration.ftl"/> {
 
+<#--<#include "../../pojo/PojoTypeDeclaration.ftl"/> {-->
+
+    <#assign classAnn =pojo.getMetaAsString("class-header")/>
+    <#if (classAnn.trim().length()>0)>
+    ${classAnn}
+    </#if>
+
+<#include "../../pojo/Ejb3TypeDeclaration.ftl"/>
+
+${pojo.getClassModifiers()} ${pojo.getDeclarationType()} ${pojo.getDeclarationName()} ${pojo.getExtendsDeclaration()} ${pojo.getImplementsDeclaration()}
+{
 <#if !pojo.isInterface()>
 
 <#--<#include "PojoFields.ftl"/>-->

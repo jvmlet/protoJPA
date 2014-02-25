@@ -215,6 +215,7 @@ pip-log.txt
 .mr.developer.cfg
 *.ipr
 *.iml
+*.iws
 *.ids
 .gradle/
 */generatedClasses

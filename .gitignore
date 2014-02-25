@@ -214,4 +214,11 @@ pip-log.txt
 #Mr Developer
 .mr.developer.cfg
 *.ipr
+*.iml
 *.ids
+.gradle/
+*/generatedClasses
+*/generatedResources
+out/
+testdb/
+

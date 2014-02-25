@@ -4,10 +4,9 @@ repositories {
 }
 dependencies {
     compile(
-            'org.hsqldb:hsqldb:2.3.1',
-            'org.hsqldb:sqltool:2.3.1',
             'junit:junit:4.11',
             project(":protoJPA.core"),
+            project(":protoJPA.testDB")
     )
     runtime(
             'org.slf4j:slf4j-simple:1.7.2'

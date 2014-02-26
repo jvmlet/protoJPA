@@ -7,6 +7,12 @@ dependencies {
             'org.hsqldb:hsqldb:2.3.1',
             'org.hsqldb:sqltool:2.3.1'
     )
+    runtime(
+        'ant:ant-launcher:1.6.5' ,
+            'ant:ant-antlr:1.6.5'
+
+    )
+
 
 }
 

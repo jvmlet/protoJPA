@@ -1,9 +1,24 @@
 apply plugin : 'java'
+
+
+
+
 repositories {
     mavenCentral()
 }
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/protojpa.java.generated'
+        }
+        resources {
+            srcDir 'src/main/protojpa.resources.generated'
+        }
+    }
+}
 dependencies {
     compile(
+            'com.google.protobuf:protobuf-java:2.5.0',
             'junit:junit:4.11',
             project(":protoJPA.core"),
             project(":protoJPA.testDB")
@@ -11,5 +26,54 @@ dependencies {
     runtime(
             'org.slf4j:slf4j-simple:1.7.2'
     )
+
+
 }
+
+task generateEntities() {
+
+    doLast {
+        println configurations.runtime.asPath
+        ant.taskdef(name: 'hibernatetool',
+                classname: 'org.hibernate.tool.ant.HibernateToolTask',
+                classpath: configurations.runtime.asPath
+        )
+        ant.hibernatetool(
+                destdir: "$projectDir/src/main/protojpa.java.generated"
+        ) {
+            jdbcconfiguration(
+                    packagename: 'db.entities',
+                    configurationfile: "$projectDir/src/main/resources/hibernate.cfg.xml",
+                    revengfile: "$projectDir/src/main/resources/hibernate.reveng.xml",
+            )
+
+            hbmtemplate(exporterclass: "com.lognet.protojpa.Pojo2ProtobufExporter") {
+                property(key: "jdk5", value: "true")
+                property(key: "ejb3", value: "true")
+                property(key: "protoFileName", value: "Sabre")
+                property(key: "resourcesDestDir", value: "$projectDir/src/main/protojpa.resources.generated")
+                property(key: "protoToolFilePath", value: "C:\\protoc-2.5.0-win32\\protoc.exe")
+            }
+
+            //hbm2java (jdk5:"true",ejb3:"true")
+            // hbm2dao()
+
+        }
+
+    }
+}
+task startDB(type: JavaExec) {
+    main = "com.lognet.protojpa.testdb.TestDB"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+generateEntities.dependsOn  startDB
+//stopDB.dependsOn   generateEntities
+//compileJava.dependsOn stopDB
+
+
+
+
+
+
 

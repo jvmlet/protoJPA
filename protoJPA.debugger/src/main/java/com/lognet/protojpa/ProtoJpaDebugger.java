@@ -2,20 +2,25 @@ package com.lognet.protojpa;
 
 
 import com.lognet.protojpa.testdb.TestDB;
-import org.junit.*;
+import org.apache.tools.ant.DefaultLogger;
+import org.apache.tools.ant.DemuxOutputStream;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.ProjectHelper;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.File;
+import java.io.PrintStream;
 import java.net.URISyntaxException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.net.URL;
 
 /**
  * Created by alexf on 2/13/14.
  */
 public class ProtoJpaDebugger {
 
-    private Connection connection = null;
+
     @BeforeClass
     public static void startDB() throws  Exception {
         TestDB.start();
@@ -24,27 +29,26 @@ public class ProtoJpaDebugger {
      public static void shutDownDB(){
          TestDB.stop();
      }
-    @Before
-    public void setup() throws ClassNotFoundException, SQLException {
-            connection = DriverManager.getConnection("jdbc:hsqldb:hsql://localhost/xdb", "sa", "");
-    }
-    @After
-    public void tearDown() throws SQLException {
-        connection.close();
-    }
-
 
     @Test
-    public void simpleTest() throws URISyntaxException {
-         new HibernateAntToolLauncher().run(getResourceFile("hibernate.reveng.xml"),
-                 getResourceFile("hibernate.cfg.xml"),
-                 new File("generatedClasses"),
-                 new File("generatedResources"),
-                 new File("C:\\protoc-2.5.0-win32\\protoc.exe"));
+    public void test() throws URISyntaxException {
+        final Project project = new Project();
+        project.init();
+        DefaultLogger logger = new DefaultLogger();
+        project.addBuildListener(logger);
+        logger.setOutputPrintStream(System.out);
+        logger.setErrorPrintStream(System.err);
+        logger.setMessageOutputLevel(Project.MSG_INFO);
+        System.setOut(new PrintStream(new DemuxOutputStream(project, false)));
+        System.setErr(new PrintStream(new DemuxOutputStream(project, true)));
+
+        final URL buildXML = ClassLoader.getSystemClassLoader().getResource("build.xml");
+        ProjectHelper.getProjectHelper().parse(project,new File(buildXML.toURI()));
+        project.executeTarget(project.getDefaultTarget());
+
     }
-    private static File getResourceFile(String resourceName) throws URISyntaxException {
-        return new File(ClassLoader.getSystemClassLoader().getResource(resourceName).toURI());
-    }
+
+
 
 
 

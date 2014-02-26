@@ -1,3 +1,0 @@
-message b{
- optional string test =1;
-}

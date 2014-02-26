@@ -1,0 +1,28 @@
+<project  name="demo" default="generateJPA">
+
+
+    <property name="PROTOC_EXECUTABLE_PATH" value="C:\protoc-2.5.0-win32\protoc.exe"/>
+    <target name="generateJPA">
+        <taskdef name="hibernatetool"
+                 classname="org.hibernate.tool.ant.HibernateToolTask"
+                />
+        <hibernatetool destdir="${basedir}/generatedClasses" >
+            <jdbcconfiguration packagename="db.entities"
+                               configurationfile="${basedir}/hibernate.cfg.xml"
+                               revengfile="${basedir}/hibernate.reveng.xml" />
+
+            <hbmtemplate   exporterclass="com.lognet.protojpa.Pojo2ProtobufExporter">
+
+                <property key="jdk5" value="true"/>
+                <property key="ejb3" value="true"/>
+                <property key="protoFileName" value="demo"/>
+                <property key="resourcesDestDir" value="${basedir}/generatedResources"/>
+                <property key="protoToolFilePath" value="${PROTOC_EXECUTABLE_PATH}"/>
+            </hbmtemplate>
+            <!--<hbm2java  jdk5="true" ejb3="true"/>-->
+
+
+
+        </hibernatetool>
+    </target>
+</project>

@@ -1,4 +1,7 @@
+
 allprojects{
     group "com.lognet"
     version "0.0.1"
+
 }
+

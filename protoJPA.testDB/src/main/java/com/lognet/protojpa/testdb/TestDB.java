@@ -14,44 +14,44 @@ import java.sql.SQLException;
  */
 public  class TestDB {
 
-    public static void main(String[] args) throws Exception {
-        Runtime.getRuntime().addShutdownHook(new Thread(){
-            @Override
-            public void run() {
-                System.out.println("Stopping the DB ....");
-                TestDB.stop();
+    public static void main(String[] args) {
+        try {
+            if("-populate".equalsIgnoreCase(args[0])){
+                populate();
+            }else if("-stop".equalsIgnoreCase(args[0])){
+                createConnection().prepareCall("SHUTDOWN").execute();
             }
-        });
-        try{
-         start();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            System.exit(0);
         }
-      //  System.exit(0);
-        return;
-
 
     }
+
     private static Server hsqlServer = null;
+
     public static void start() throws Exception {
+
         Class.forName("org.hsqldb.jdbcDriver");
 
         hsqlServer = new Server();
-        //    hsqlServer.setLogWriter(null);
         hsqlServer.setSilent(true);
         hsqlServer.setDatabaseName(0, "xdb");
         hsqlServer.setDatabasePath(0, "file:testdb/db");
         hsqlServer.start();
+        populate();
+
+    }
+    public static void populate() throws Exception {
         final InputStream sqlIn = ClassLoader.getSystemClassLoader().getResourceAsStream("sampledata.sql");
         try{
 
-        System.setIn(sqlIn);
-        final SqlFile sqlFile = new SqlFile("UTF-8",false);
+            System.setIn(sqlIn);
+            final SqlFile sqlFile = new SqlFile("UTF-8",false);
 
-        sqlFile.setAutoClose(true);
-        sqlFile.setConnection(createConnection());
-        sqlFile.execute();
+            sqlFile.setAutoClose(true);
+            sqlFile.setConnection(createConnection());
+            sqlFile.execute();
         }finally {
             System.setIn(System.in);
             if(null!=sqlIn){

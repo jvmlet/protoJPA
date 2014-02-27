@@ -10,6 +10,9 @@ dependencies {
     compile(
             'org.hibernate:hibernate-tools:4.0.0-CR1',
     )
+    runtime(
+            'org.slf4j:slf4j-simple:1.5.8'
+    )
 
 
 }

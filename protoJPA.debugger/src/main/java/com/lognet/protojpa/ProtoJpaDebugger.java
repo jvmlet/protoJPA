@@ -45,10 +45,10 @@ public class ProtoJpaDebugger {
         final URL buildXML = ClassLoader.getSystemClassLoader().getResource("build.xml");
         ProjectHelper.getProjectHelper().parse(project,new File(buildXML.toURI()));
         project.executeTarget(project.getDefaultTarget());
-        System.out.println("Your generated files should be here : "+project.getBaseDir().getAbsolutePath());
-
-
+        System.out.println("!!! YOUR GENERATED FILES SHOULD BE HERE : "+project.getBaseDir().getAbsolutePath());
     }
+
+
 
 
 

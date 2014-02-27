@@ -1,21 +1,24 @@
-apply plugin : 'java'
-
-
-
+apply plugin: 'java'
 
 repositories {
     mavenCentral()
 }
+
+configurations {
+    db
+}
+
 sourceSets {
     main {
         java {
-            srcDir 'src/main/protojpa.java.generated'
+            srcDir 'src/main/generatedClasses'
         }
         resources {
-            srcDir 'src/main/protojpa.resources.generated'
+            srcDir 'src/main/generatedResources'
         }
     }
 }
+
 dependencies {
     compile(
             'com.google.protobuf:protobuf-java:2.5.0',
@@ -23,23 +26,20 @@ dependencies {
             project(":protoJPA.core"),
             project(":protoJPA.testDB")
     )
-    runtime(
-            'org.slf4j:slf4j-simple:1.7.2'
+    db(
+           project(":protoJPA.testDB")
     )
-
-
 }
 
 task generateEntities() {
 
     doLast {
-        println configurations.runtime.asPath
-        ant.taskdef(name: 'hibernatetool',
+       ant.taskdef(name: 'hibernatetool',
                 classname: 'org.hibernate.tool.ant.HibernateToolTask',
                 classpath: configurations.runtime.asPath
         )
         ant.hibernatetool(
-                destdir: "$projectDir/src/main/protojpa.java.generated"
+                destdir: "$projectDir/src/main/generatedClasses"
         ) {
             jdbcconfiguration(
                     packagename: 'db.entities',
@@ -50,8 +50,8 @@ task generateEntities() {
             hbmtemplate(exporterclass: "com.lognet.protojpa.Pojo2ProtobufExporter") {
                 property(key: "jdk5", value: "true")
                 property(key: "ejb3", value: "true")
-                property(key: "protoFileName", value: "Sabre")
-                property(key: "resourcesDestDir", value: "$projectDir/src/main/protojpa.resources.generated")
+                property(key: "protoFileName", value: "demo")
+                property(key: "resourcesDestDir", value: "$projectDir/src/main/generatedResources")
                 property(key: "protoToolFilePath", value: "C:\\protoc-2.5.0-win32\\protoc.exe")
             }
 
@@ -62,14 +62,54 @@ task generateEntities() {
 
     }
 }
-task startDB(type: JavaExec) {
-    main = "com.lognet.protojpa.testdb.TestDB"
-    classpath = sourceSets.main.runtimeClasspath
+
+
+
+
+
+task startDB {
+    doFirst {
+
+        ant.java(fork: true, spawn: true, classname: "org.hsqldb.Server") {
+            arg(value: '--database.0')
+            arg(value: 'file:testdb/db')
+            arg(value: '--dbname.0')
+            arg(value: 'xdb')
+            classpath {
+                configurations.db.each { File f ->
+                    pathelement(location: f.getAbsolutePath())
+                }
+            }
+        }
+
+        // have to fork it since TestDB is looking the resource using SystemClassLoader
+        ant.java(fork: true, spawn: false, classname: "com.lognet.protojpa.testdb.TestDB") {
+            arg(value: '-populate')
+            classpath {
+                configurations.db.each { File f ->
+                    pathelement(location: f.getAbsolutePath())
+                }
+            }
+        }
+    }
 }
 
-generateEntities.dependsOn  startDB
-//stopDB.dependsOn   generateEntities
-//compileJava.dependsOn stopDB
+task stopDB() {
+    doFirst {
+        ant.java(fork: true, spawn: false, classname: "com.lognet.protojpa.testdb.TestDB") {
+            arg(value: '-stop')
+            classpath {
+                configurations.db.each { File f ->
+                    pathelement(location: f.getAbsolutePath())
+                }
+            }
+        }
+    }
+}
+
+generateEntities.dependsOn startDB
+stopDB.dependsOn generateEntities
+compileJava.dependsOn stopDB
 
 
 

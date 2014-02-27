@@ -108,8 +108,10 @@ task stopDB() {
 }
 
 generateEntities.dependsOn startDB
-stopDB.dependsOn generateEntities
-compileJava.dependsOn stopDB
+compileJava.dependsOn generateEntities
+
+stopDB.dependsOn test
+build.dependsOn stopDB
 
 
 

@@ -10,8 +10,6 @@ import org.hibernate.tool.hbm2x.visitor.JavaTypeFromValueVisitor;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -25,13 +23,13 @@ import java.util.Map;
 public class Pojo2ProtobufExporter extends POJOExporter {
 
     public static final String PROTO_FILE_NAME_PROPERTY = "protoFileName";
-    public static final String EXTRA_PROTO_MESSAGES_FILE= "extraProtoMessagesFile";
+    public static final String EXTRA_PROTO_MESSAGES_FILE = "extraProtoMessagesFile";
     public static final String RESOURCES_DESTINATION_DIR_PROPERTY = "resourcesDestDir";
     public static final String PROTO_TOOL_FILE_PATH_PROPERTY = "protoToolFilePath";
 
 
     private static final Map<Class, String> javaToProtoTypeMapping = new HashMap<Class, String>();
-    private static Map<String,Class> primitiveTypes = new HashMap<String,Class>();
+    private static Map<String, Class> primitiveTypes = new HashMap<String, Class>();
 
     static {
         primitiveTypes.put(Byte.TYPE.getName(), Byte.TYPE);
@@ -42,7 +40,6 @@ public class Pojo2ProtobufExporter extends POJOExporter {
         primitiveTypes.put(Float.TYPE.getName(), Float.TYPE);
         primitiveTypes.put(Double.TYPE.getName(), Double.TYPE);
         primitiveTypes.put(Boolean.TYPE.getName(), Boolean.TYPE);
-
 
 
         javaToProtoTypeMapping.put(double.class, "double");
@@ -72,44 +69,52 @@ public class Pojo2ProtobufExporter extends POJOExporter {
     private File originalOutputDir;
 
 
-
     @Override
     protected void setupContext() {
-
 
 
         super.setupContext();
 
 
-
         originalOutputDir = getOutputDirectory();
-        File interfaceDir = new File(originalOutputDir,String.format("com%1$slognet%1$sprotojpa", File.separator));
+        File interfaceDir = new File(originalOutputDir, String.format("com%1$slognet%1$sprotojpa", File.separator));
+        BufferedReader resourceReader = null;
+        BufferedWriter fileWriter = null;
+        ;
         try {
             interfaceDir.mkdirs();
             final InputStream interfaceContentStream = getClass().getClassLoader().getResourceAsStream("com/lognet/protojpa/IEntityToProtoMessageTransformer.txt");
-            BufferedReader br = new BufferedReader(new InputStreamReader(interfaceContentStream));
-            StringBuilder sb = new StringBuilder();
+            resourceReader = new BufferedReader(new InputStreamReader(interfaceContentStream));
+            fileWriter = new BufferedWriter(new FileWriter(new File(interfaceDir, "IEntityToProtoMessageTransformer.java")));
             String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
+            while ((line = resourceReader.readLine()) != null) {
+                fileWriter.write(line);
+                fileWriter.newLine();
             }
-            final FileChannel channel = new FileOutputStream(new File(interfaceDir, "IEntityToProtoMessageTransformer.java"), false).getChannel();
-            channel.write(ByteBuffer.wrap(sb.toString().getBytes()));
-            channel.close();
         } catch (Exception e) {
-            throw  new ExporterException(String.format("Cant create %s directory",interfaceDir.getAbsolutePath()));
+            throw new ExporterException(String.format("Cant create %s directory", interfaceDir.getAbsolutePath()));
+        } finally {
+            try {
+                if (null!=resourceReader) {
+                   resourceReader.close();
+                }
+                if(null!=fileWriter){
+                    fileWriter.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         String protoFileName = getProtoFileName();
         final String protocFilePath = getProperties().getProperty(PROTO_TOOL_FILE_PATH_PROPERTY);
-        if(!new File(protocFilePath).exists()){
-            throw  new ExporterException(String.format("File %s doesn't exist",protocFilePath));
+        if (!new File(protocFilePath).exists()) {
+            throw new ExporterException(String.format("File %s doesn't exist", protocFilePath));
         }
         final String extraProtoMessages = getProperties().getProperty(EXTRA_PROTO_MESSAGES_FILE);
         setArtifactCollector(new ProtoFilesConsolidator(new File(getResourcesDestDir(), protoFileName + ".proto"),
-                                                        originalOutputDir.getAbsolutePath(),
-                                                        protocFilePath,extraProtoMessages));
+                originalOutputDir.getAbsolutePath(),
+                protocFilePath, extraProtoMessages));
     }
-
 
 
     @Override
@@ -129,15 +134,15 @@ public class Pojo2ProtobufExporter extends POJOExporter {
     @Override
     protected void exportPersistentClass(Map additionalContext, POJOClass element) {
         PersistentClass clazz = (PersistentClass) element.getDecoratedObject();
-        MetaAttribute implementsAttr= clazz.getMetaAttribute("implements");
-        if(null==implementsAttr){
+        MetaAttribute implementsAttr = clazz.getMetaAttribute("implements");
+        if (null == implementsAttr) {
             implementsAttr = new MetaAttribute("implements");
-            clazz.getMetaAttributes().put(implementsAttr.getName(),implementsAttr);
+            clazz.getMetaAttributes().put(implementsAttr.getName(), implementsAttr);
         }
         implementsAttr.addValue("com.lognet.protojpa.IEntityToProtoMessageTransformer");
 
         // set used package name
-        ((ProtoFilesConsolidator)getArtifactCollector()).setPackageName(element.getPackageDeclaration());
+        ((ProtoFilesConsolidator) getArtifactCollector()).setPackageName(element.getPackageDeclaration());
 
         //export proto file
         setOutputDirectory(new File(getResourcesDestDir()));
@@ -155,18 +160,17 @@ public class Pojo2ProtobufExporter extends POJOExporter {
     @Override
     protected void exportPOJO(Map additionalContext, POJOClass element) {
 
-        additionalContext.put("protoNS", getProtoFileName().substring(0,1).toUpperCase()+getProtoFileName().substring(1));
+        additionalContext.put("protoNS", getProtoFileName().substring(0, 1).toUpperCase() + getProtoFileName().substring(1));
         super.exportPOJO(additionalContext, element);
     }
 
-    private String getProtoFileName(){
-       return getProperties().getProperty(PROTO_FILE_NAME_PROPERTY, "default");
+    private String getProtoFileName() {
+        return getProperties().getProperty(PROTO_FILE_NAME_PROPERTY, "default");
     }
 
-    private String getResourcesDestDir(){
+    private String getResourcesDestDir() {
         return getProperties().getProperty(RESOURCES_DESTINATION_DIR_PROPERTY, originalOutputDir.getAbsolutePath());
     }
-
 
 
     public String getUsageType(Property property, POJOClass pojo) {
@@ -182,38 +186,43 @@ public class Pojo2ProtobufExporter extends POJOExporter {
     public String getGenericParamType(String genericType) {
         String type = genericType;
         final int isGeneric = genericType.indexOf('<');
-        if(isGeneric>0){
-            type= genericType.substring(isGeneric +1,genericType.indexOf('>'));
+        if (isGeneric > 0) {
+            type = genericType.substring(isGeneric + 1, genericType.indexOf('>'));
         }
-        return  type;
+        return type;
     }
-    public boolean isGeneratedType(Property property, POJOClass pojo){
 
-        if(getCfg2JavaTool().isComponent(property)){
+    public boolean isGeneratedType(Property property, POJOClass pojo) {
+
+        if (getCfg2JavaTool().isComponent(property)) {
             return true;
         }
 
 
         final Iterator pojoIterator = getCfg2JavaTool().getPOJOIterator(getConfiguration().getClassMappings());
-        while (pojoIterator.hasNext()){
-            final POJOClass p= (POJOClass) pojoIterator.next();
-            if(p.getDeclarationName().equals(pojo.getJavaTypeName(property,true))){
+        while (pojoIterator.hasNext()) {
+            final POJOClass p = (POJOClass) pojoIterator.next();
+            if (p.getDeclarationName().equals(pojo.getJavaTypeName(property, true))) {
                 return true;
             }
         }
         return false;
-    };
-    public boolean isCollectionType(Property property){
+    }
+
+    ;
+
+    public boolean isCollectionType(Property property) {
         return property.getValue() instanceof org.hibernate.mapping.Collection;
     }
 
-    public boolean isNullableType(Property property){
+    public boolean isNullableType(Property property) {
         try {
             return !getPropertyJavaType(property).isPrimitive();
         } catch (ClassNotFoundException e) {
             return true;
         }
     }
+
     public String getProtoFieldType(Property property, POJOClass pojo) {
         String fieldType = null;
 
@@ -223,7 +232,7 @@ public class Pojo2ProtobufExporter extends POJOExporter {
         } catch (ClassNotFoundException e) {
 
         }
-        if(null==fieldType){
+        if (null == fieldType) {
             fieldType = getGenericParamType(pojo.getJavaTypeName(property, true));
         }
 
@@ -233,57 +242,59 @@ public class Pojo2ProtobufExporter extends POJOExporter {
     /**
      * Maps  protobuf-typed expression to java-typed expression according to property java type.
      * Example: <b>int</b> becomes <b>new Integer(int)</b> and <b>dateInMS</b> becomes <b>new Date(dateInMS)</b>
-     * @param property  pojo field
-     * @param pojo pojo class
+     *
+     * @param property   pojo field
+     * @param pojo       pojo class
      * @param expression protobuf-typed expression to map
      * @return java-typed epression
      */
-    public String protoFieldTypeToJavaTypeExpression(Property property, POJOClass pojo,String expression) {
+    public String protoFieldTypeToJavaTypeExpression(Property property, POJOClass pojo, String expression) {
         try {
             Class<?> javaType = getPropertyJavaType(property);
-            if(!javaType.isPrimitive() && !javaType.isAssignableFrom(String.class)){
-                return String.format("new %s(%s)",javaType.getName(),expression);
+            if (!javaType.isPrimitive() && !javaType.isAssignableFrom(String.class)) {
+                return String.format("new %s(%s)", javaType.getName(), expression);
             }
-            return expression ;
-        }catch (ClassNotFoundException e) {
-            return String.format("new %s(%s)", pojo.getJavaTypeName(property, true),expression) ;
+            return expression;
+        } catch (ClassNotFoundException e) {
+            return String.format("new %s(%s)", pojo.getJavaTypeName(property, true), expression);
         }
     }
 
     /**
-     *  Maps java-typed expression to  protobuf-typed expression according to <b>property</b> java type.
-     *  Example :<b>someIntExpression</b> becomes <b>someIntExpression.intValue()</b>  and
-     *  <b>dateExpression</b> becomes <b>dateExpression.getTime()</b>
-     * @param property pojo field
-     * @param pojo pojo class
+     * Maps java-typed expression to  protobuf-typed expression according to <b>property</b> java type.
+     * Example :<b>someIntExpression</b> becomes <b>someIntExpression.intValue()</b>  and
+     * <b>dateExpression</b> becomes <b>dateExpression.getTime()</b>
+     *
+     * @param property   pojo field
+     * @param pojo       pojo class
      * @param expression java-typed expression
-     * @return    protobuf-typed expression
+     * @return protobuf-typed expression
      */
-    public String javaTypeToProtoFieldTypeExpression(Property property, POJOClass pojo,String expression) {
+    public String javaTypeToProtoFieldTypeExpression(Property property, POJOClass pojo, String expression) {
         try {
-             Class<?> javaType = getPropertyJavaType(property);
-            if(Number.class.isAssignableFrom(javaType)){
-                if(javaType.equals(BigDecimal.class)){
+            Class<?> javaType = getPropertyJavaType(property);
+            if (Number.class.isAssignableFrom(javaType)) {
+                if (javaType.equals(BigDecimal.class)) {
                     javaType = Long.class;
                 }
-                if(javaType.equals(Integer.class)){
+                if (javaType.equals(Integer.class)) {
                     javaType = int.class;
                 }
-                return String.format("%s.%sValue()",expression,javaType.getSimpleName().toLowerCase());
+                return String.format("%s.%sValue()", expression, javaType.getSimpleName().toLowerCase());
             }
-            if(Date.class.isAssignableFrom(javaType)){
-                return String.format("%s.getTime()",expression);
+            if (Date.class.isAssignableFrom(javaType)) {
+                return String.format("%s.getTime()", expression);
             }
-            return expression ;
-        }catch (ClassNotFoundException e) {
-            return String.format("%s.toProtoMessage()",expression );
+            return expression;
+        } catch (ClassNotFoundException e) {
+            return String.format("%s.toProtoMessage()", expression);
         }
     }
 
     private Class<?> getPropertyJavaType(Property property) throws ClassNotFoundException {
         String fieldJavaType = (String) property.getValue().accept(new JavaTypeFromValueVisitor());
         Class<?> primitiveClass = primitiveTypes.get(fieldJavaType);
-        return primitiveClass== null?Class.forName(fieldJavaType):primitiveClass;
+        return primitiveClass == null ? Class.forName(fieldJavaType) : primitiveClass;
     }
 
 }

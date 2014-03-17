@@ -8,8 +8,7 @@ import org.hibernate.tool.hbm2x.POJOExporter;
 import org.hibernate.tool.hbm2x.pojo.POJOClass;
 import org.hibernate.tool.hbm2x.visitor.JavaTypeFromValueVisitor;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -87,9 +86,15 @@ public class Pojo2ProtobufExporter extends POJOExporter {
         File interfaceDir = new File(originalOutputDir,String.format("com%1$slognet%1$sprotojpa", File.separator));
         try {
             interfaceDir.mkdirs();
-            String content = new java.util.Scanner(new File(getClass().getClassLoader().getResource("com/lognet/protojpa/IEntityToProtoMessageTransformer.txt").toURI()),"UTF8").useDelimiter("\\Z").next();
+            final InputStream interfaceContentStream = getClass().getClassLoader().getResourceAsStream("com/lognet/protojpa/IEntityToProtoMessageTransformer.txt");
+            BufferedReader br = new BufferedReader(new InputStreamReader(interfaceContentStream));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
             final FileChannel channel = new FileOutputStream(new File(interfaceDir, "IEntityToProtoMessageTransformer.java"), false).getChannel();
-            channel.write(ByteBuffer.wrap(content.getBytes()));
+            channel.write(ByteBuffer.wrap(sb.toString().getBytes()));
             channel.close();
         } catch (Exception e) {
             throw  new ExporterException(String.format("Cant create %s directory",interfaceDir.getAbsolutePath()));

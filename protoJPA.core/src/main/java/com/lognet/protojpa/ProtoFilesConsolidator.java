@@ -7,8 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
@@ -17,19 +15,21 @@ import java.nio.channels.FileChannel;
  */
 public class ProtoFilesConsolidator extends ArtifactCollector {
 
-    public static final String EXTRA_PROTO_MESSAGES_TXT = "extraProtoMessages.txt";
+
 
     protected Logger log = LoggerFactory.getLogger(this.getClass());
     private String outputJavaDir;
     private File outputProtoFile;
     private String protocFilePath;
     private String packageName = null;
+    private String extraMessagesFilePath;
 
 
-    public ProtoFilesConsolidator(File outputProtoFile,String outputJavaDir,String protocFilePath) {
+    public ProtoFilesConsolidator(File outputProtoFile,String outputJavaDir,String protocFilePath,String extraMessagesFilePath) {
         this.outputProtoFile = outputProtoFile;
         this.outputJavaDir = outputJavaDir;
         this.protocFilePath = protocFilePath;
+        this.extraMessagesFilePath = extraMessagesFilePath;
     }
 
     public void setPackageName(String packageName) {
@@ -58,16 +58,14 @@ public class ProtoFilesConsolidator extends ArtifactCollector {
                 src.close();
                 protoFile.delete();
             }
-            final URL extraMessages = ClassLoader.getSystemClassLoader().getResource(EXTRA_PROTO_MESSAGES_TXT);
-            if(null!=extraMessages){
-                FileChannel ch = new FileInputStream(new File(extraMessages.toURI())).getChannel();
+
+            if(null!=extraMessagesFilePath ){
+                FileChannel ch = new FileInputStream(new File(extraMessagesFilePath)).getChannel();
                 dest.transferFrom(ch, dest.size(), ch.size());
                 ch.close();
             }
 
         } catch (IOException e) {
-            throw new ExporterException("Failed to consolidate files", e);
-        } catch (URISyntaxException e) {
             throw new ExporterException("Failed to consolidate files", e);
         }
         finally {

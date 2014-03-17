@@ -43,7 +43,7 @@ task generateEntities() {
         ) {
             jdbcconfiguration(
                     packagename: 'db.entities',
-                    configurationfile: "$projectDir/src/main/resources/hibernate.cfg.xml",
+                    configurationfile: "$projectDir/src/main/resources/hibernate.cfg4reveng.xml",
                     revengfile: "$projectDir/src/main/resources/hibernate.reveng.xml",
             )
 

@@ -1,0 +1,5 @@
+package com.lognet.protojpa;
+
+public interface IEntityToProtoMessageTransformer {
+    <T extends GeneratedMessage>  T toProtoMessage();
+}

@@ -17,24 +17,16 @@ ${pojo.getClassModifiers()} ${pojo.getDeclarationType()} ${pojo.getDeclarationNa
 {
 <#if !pojo.isInterface()>
 
-<#--<#include "PojoFields.ftl"/>-->
-private ${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()}.Builder builder;
+<#include "../../pojo/PojoFields.ftl"/>
 
-<#--<#include "../../pojo/PojoConstructors.ftl"/>-->
-public ${pojo.getDeclarationName()}(){
-    builder = ${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()}.newBuilder();
-}
-public ${pojo.getDeclarationName()}(${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()} from){
-    builder = ${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()}.newBuilder(from);
-}
 
-public ${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()} detach(){
-    return builder.build();
-}
 
-   
-<#--<#include "../../pojo/PojoPropertyAccessors.ftl"/>-->
-    <#include "PojoProtoPropertyAccessors.ftl"/>
+<#include "../../pojo/PojoConstructors.ftl"/>
+
+    <#include "Pojo2Proto.ftl"/>
+<#include "../../pojo/PojoPropertyAccessors.ftl"/>
+
+
 
 <#include "../../pojo/PojoToString.ftl"/>
 

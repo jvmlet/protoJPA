@@ -1,5 +1,7 @@
 package com.lognet.protojpa;
 
+import org.hibernate.mapping.MetaAttribute;
+import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Property;
 import org.hibernate.tool.hbm2x.ExporterException;
 import org.hibernate.tool.hbm2x.POJOExporter;
@@ -7,7 +9,10 @@ import org.hibernate.tool.hbm2x.pojo.POJOClass;
 import org.hibernate.tool.hbm2x.visitor.JavaTypeFromValueVisitor;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -21,6 +26,7 @@ import java.util.Map;
 public class Pojo2ProtobufExporter extends POJOExporter {
 
     public static final String PROTO_FILE_NAME_PROPERTY = "protoFileName";
+    public static final String EXTRA_PROTO_MESSAGES_FILE= "extraProtoMessagesFile";
     public static final String RESOURCES_DESTINATION_DIR_PROPERTY = "resourcesDestDir";
     public static final String PROTO_TOOL_FILE_PATH_PROPERTY = "protoToolFilePath";
 
@@ -70,15 +76,33 @@ public class Pojo2ProtobufExporter extends POJOExporter {
 
     @Override
     protected void setupContext() {
+
+
+
         super.setupContext();
 
+
+
         originalOutputDir = getOutputDirectory();
+        File interfaceDir = new File(originalOutputDir,String.format("com%1$slognet%1$sprotojpa", File.separator));
+        try {
+            interfaceDir.mkdirs();
+            String content = new java.util.Scanner(new File(getClass().getClassLoader().getResource("com/lognet/protojpa/IEntityToProtoMessageTransformer.txt").toURI()),"UTF8").useDelimiter("\\Z").next();
+            final FileChannel channel = new FileOutputStream(new File(interfaceDir, "IEntityToProtoMessageTransformer.java"), false).getChannel();
+            channel.write(ByteBuffer.wrap(content.getBytes()));
+            channel.close();
+        } catch (Exception e) {
+            throw  new ExporterException(String.format("Cant create %s directory",interfaceDir.getAbsolutePath()));
+        }
         String protoFileName = getProtoFileName();
         final String protocFilePath = getProperties().getProperty(PROTO_TOOL_FILE_PATH_PROPERTY);
         if(!new File(protocFilePath).exists()){
             throw  new ExporterException(String.format("File %s doesn't exist",protocFilePath));
         }
-        setArtifactCollector(new ProtoFilesConsolidator(new File(getResourcesDestDir(), protoFileName + ".proto"),originalOutputDir.getAbsolutePath(), protocFilePath));
+        final String extraProtoMessages = getProperties().getProperty(EXTRA_PROTO_MESSAGES_FILE);
+        setArtifactCollector(new ProtoFilesConsolidator(new File(getResourcesDestDir(), protoFileName + ".proto"),
+                                                        originalOutputDir.getAbsolutePath(),
+                                                        protocFilePath,extraProtoMessages));
     }
 
 
@@ -99,6 +123,14 @@ public class Pojo2ProtobufExporter extends POJOExporter {
 
     @Override
     protected void exportPersistentClass(Map additionalContext, POJOClass element) {
+        PersistentClass clazz = (PersistentClass) element.getDecoratedObject();
+        MetaAttribute implementsAttr= clazz.getMetaAttribute("implements");
+        if(null==implementsAttr){
+            implementsAttr = new MetaAttribute("implements");
+            clazz.getMetaAttributes().put(implementsAttr.getName(),implementsAttr);
+        }
+        implementsAttr.addValue("com.lognet.protojpa.IEntityToProtoMessageTransformer");
+
         // set used package name
         ((ProtoFilesConsolidator)getArtifactCollector()).setPackageName(element.getPackageDeclaration());
 
@@ -150,11 +182,17 @@ public class Pojo2ProtobufExporter extends POJOExporter {
         }
         return  type;
     }
-    public boolean isGeneratedType(String typeName){
+    public boolean isGeneratedType(Property property, POJOClass pojo){
+
+        if(getCfg2JavaTool().isComponent(property)){
+            return true;
+        }
+
+
         final Iterator pojoIterator = getCfg2JavaTool().getPOJOIterator(getConfiguration().getClassMappings());
         while (pojoIterator.hasNext()){
-            final POJOClass pojo= (POJOClass) pojoIterator.next();
-            if(pojo.getDeclarationName().equals(typeName)){
+            final POJOClass p= (POJOClass) pojoIterator.next();
+            if(p.getDeclarationName().equals(pojo.getJavaTypeName(property,true))){
                 return true;
             }
         }
@@ -233,7 +271,7 @@ public class Pojo2ProtobufExporter extends POJOExporter {
             }
             return expression ;
         }catch (ClassNotFoundException e) {
-            return String.format("%s.detach()",expression );
+            return String.format("%s.toProtoMessage()",expression );
         }
     }
 

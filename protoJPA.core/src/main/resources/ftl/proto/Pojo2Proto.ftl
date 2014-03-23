@@ -24,18 +24,25 @@ public static ${jpaTypeDeclaration} fromProtoMessage(${protoTypeDeclaration} pro
     </#foreach>
     return entity;
 }
-private ${protoTypeDeclaration} protoMessage = null;
-public ${protoTypeDeclaration} toProtoMessage(){
-    if(null==protoMessage){
-    final ${protoTypeDeclaration}.Builder builder =  ${protoTypeDeclaration}.newBuilder();
-<#foreach property in pojo.getAllPropertiesIterator()>
-    <#if pojo.getMetaAttribAsBool(property, "gen-property", true)>
-            <#include "javaToProto.ftl"/>
-    </#if>
-</#foreach>
-    protoMessage = builder.build();
+private ${protoTypeDeclaration}.Builder messageBuilder = null;
+
+public ${protoTypeDeclaration}.Builder   toMessageBuilder(){
+    if(null==messageBuilder){
+    messageBuilder =  ${protoTypeDeclaration}.newBuilder();
+        <#foreach property in pojo.getAllPropertiesIterator()>
+            <#if pojo.getMetaAttribAsBool(property, "gen-property", true)>
+                <#include "javaToProto.ftl"/>
+            </#if>
+        </#foreach>
     }
-    return protoMessage;
+    return messageBuilder;
+};
+
+
+
+public ${protoTypeDeclaration} toProtoMessage(){
+
+    return toMessageBuilder().build();
 }
 
 

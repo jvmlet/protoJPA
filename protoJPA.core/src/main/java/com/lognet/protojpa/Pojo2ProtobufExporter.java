@@ -83,7 +83,7 @@ public class Pojo2ProtobufExporter extends POJOExporter {
         ;
         try {
             interfaceDir.mkdirs();
-            final InputStream interfaceContentStream = getClass().getClassLoader().getResourceAsStream("com/lognet/protojpa/IEntityToProtoMessageTransformer.txt");
+            final InputStream interfaceContentStream = getClass().getClassLoader().getResourceAsStream("com/lognet/protojpa/IEntityToProtoMessageTransformer.java");
             resourceReader = new BufferedReader(new InputStreamReader(interfaceContentStream));
             fileWriter = new BufferedWriter(new FileWriter(new File(interfaceDir, "IEntityToProtoMessageTransformer.java")));
             String line;

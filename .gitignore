@@ -218,8 +218,8 @@ pip-log.txt
 *.iws
 *.ids
 .gradle/
-*/generatedClasses
-*/generatedResources
+generatedClasses/
+generatedResources/
 out/
 testdb/
 

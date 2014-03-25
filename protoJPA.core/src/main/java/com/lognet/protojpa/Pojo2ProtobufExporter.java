@@ -5,6 +5,7 @@ import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Property;
 import org.hibernate.tool.hbm2x.ExporterException;
 import org.hibernate.tool.hbm2x.POJOExporter;
+import org.hibernate.tool.hbm2x.TemplateProducer;
 import org.hibernate.tool.hbm2x.pojo.POJOClass;
 import org.hibernate.tool.hbm2x.visitor.JavaTypeFromValueVisitor;
 
@@ -77,20 +78,26 @@ public class Pojo2ProtobufExporter extends POJOExporter {
 
 
         originalOutputDir = getOutputDirectory();
-        File interfaceDir = new File(originalOutputDir, String.format("com%1$slognet%1$sprotojpa", File.separator));
+        String packageDir = "com.lognet.protojpa".replace('.',File.separatorChar);
+        File interfaceDir = new File(originalOutputDir, packageDir);
         BufferedReader resourceReader = null;
         BufferedWriter fileWriter = null;
         ;
         try {
             interfaceDir.mkdirs();
-            final InputStream interfaceContentStream = getClass().getClassLoader().getResourceAsStream("com/lognet/protojpa/IEntityToProtoMessageTransformer.java");
+            final InputStream interfaceContentStream = getClass().getClassLoader().getResourceAsStream("com/lognet/protojpa/IProtoJpaEntity.txt");
             resourceReader = new BufferedReader(new InputStreamReader(interfaceContentStream));
-            fileWriter = new BufferedWriter(new FileWriter(new File(interfaceDir, "IEntityToProtoMessageTransformer.java")));
+            fileWriter = new BufferedWriter(new FileWriter(new File(interfaceDir, "IProtoJpaEntity.java")));
             String line;
             while ((line = resourceReader.readLine()) != null) {
                 fileWriter.write(line);
                 fileWriter.newLine();
             }
+
+            TemplateProducer producer = new TemplateProducer(getTemplateHelper(),getArtifactCollector());
+            String filename = packageDir.concat(File.separator.concat("IProtoJpaVisitor.java"));
+            producer.produce(new HashMap(), "ftl/proto/Visitor.ftl", new File(getOutputDirectory(),filename), "Visitor.ftl");
+
         } catch (Exception e) {
             throw new ExporterException(String.format("Cant create %s directory", interfaceDir.getAbsolutePath()));
         } finally {
@@ -117,6 +124,7 @@ public class Pojo2ProtobufExporter extends POJOExporter {
     }
 
 
+
     @Override
     protected void exportComponent(Map additionalContext, POJOClass element) {
         setOutputDirectory(new File(getResourcesDestDir()));
@@ -139,7 +147,7 @@ public class Pojo2ProtobufExporter extends POJOExporter {
             implementsAttr = new MetaAttribute("implements");
             clazz.getMetaAttributes().put(implementsAttr.getName(), implementsAttr);
         }
-        implementsAttr.addValue("com.lognet.protojpa.IEntityToProtoMessageTransformer");
+        implementsAttr.addValue("com.lognet.protojpa.IProtoJpaEntity");
 
         // set used package name
         ((ProtoFilesConsolidator) getArtifactCollector()).setPackageName(element.getPackageDeclaration());
@@ -174,12 +182,15 @@ public class Pojo2ProtobufExporter extends POJOExporter {
 
 
     public String getUsageType(Property property, POJOClass pojo) {
+        String optional = "optional";
+        String required = "optional";//"required";
+
         // required is this property is identifier
         if (property.equals(pojo.getIdentifierProperty())) {
-            return "required";
+            return required;
         }
         // all fields of key class (component) are required
-        return pojo.isComponent() ? "required" : property.getValue().getType().isCollectionType() ? "repeated " : "optional";
+        return pojo.isComponent() ? required : property.getValue().getType().isCollectionType() ? "repeated " : optional;
 
     }
 

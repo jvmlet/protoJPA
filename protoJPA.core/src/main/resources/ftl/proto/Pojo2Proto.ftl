@@ -1,16 +1,4 @@
-<#-- // Property accessors -->
 
-<#--
-public ${pojo.getDeclarationName()}(){
-    builder = ${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()}.newBuilder();
-}
-public ${pojo.getDeclarationName()}(${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()} from){
-    builder = ${pojo.getPackageName()}.${protoNS}.${pojo.getDeclarationName()}.newBuilder(from);
-}
-
-
-
--->
 
 <#assign protoTypeDeclaration=pojo.getPackageName().concat("."+protoNS+".").concat(pojo.getDeclarationName())/>
 <#assign jpaTypeDeclaration=pojo.getPackageName().concat("."+pojo.getDeclarationName())/>
@@ -44,21 +32,10 @@ public ${protoTypeDeclaration} toProtoMessage(){
 
     return toMessageBuilder().build();
 }
+public void accept(com.lognet.protojpa.IProtoJpaVisitor visitor){
+   <#if !pojo.isComponent()>
+   visitor.visit(this);
+   </#if>
 
+}
 
-<#--<#foreach property in pojo.getAllPropertiesIterator()>-->
-    <#--<#if pojo.getMetaAttribAsBool(property, "gen-property", true)>-->
-
-
-
-
-
-    <#--${pojo.getPropertySetModifiers(property)} void set${pojo.getPropertyName(property)}(${pojo.getJavaTypeName(property, jdk5)} ${property.name}) {-->
-        <#--<#if exporter.isCollectionType(property)>-->
-            <#--<#include "PojoProtoCollectionPropertySetter.ftl"/>-->
-        <#--<#else>-->
-            <#--<#include "javaToProto.ftl"/>;-->
-        <#--</#if>-->
-    <#--}-->
-    <#--</#if>-->
-<#--</#foreach>-->

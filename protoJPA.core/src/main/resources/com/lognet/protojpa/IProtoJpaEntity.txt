@@ -1,7 +1,8 @@
 package com.lognet.protojpa;
 
-public interface IEntityToProtoMessageTransformer {
+public interface IProtoJpaEntity {
     <T extends com.google.protobuf.GeneratedMessage>  T toProtoMessage();
     <T extends com.google.protobuf.GeneratedMessage.Builder>  T toMessageBuilder();
+    void accept(IProtoJpaVisitor visitor);
 
 }

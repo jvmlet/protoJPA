@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-reverse-engineering SYSTEM "http://hibernate.sourceforge.net/hibernate-reverse-engineering-3.0.dtd" >
+
+<hibernate-reverse-engineering >
+
+
+    <type-mapping >
+        <sql-type jdbc-type="OTHER" hibernate-type="java.sql.Timestamp"/>
+    </type-mapping>
+
+    <table name="CUSTOMER" schema="PUBLIC" catalog="PUBLIC">
+        <!--<meta attribute="class-code">-->
+                <!--public String  getTest(){-->
+                <!--return "";-->
+                <!--}-->
+        <!--</meta>-->
+
+        <meta attribute="proto-code">
+            optional string  test = %d;
+            optional string  test2 = %d ;
+        </meta>
+    </table>
+
+</hibernate-reverse-engineering>
